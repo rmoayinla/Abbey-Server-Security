@@ -1,0 +1,68 @@
+/* login form styles */
+#loginform label{
+	margin-bottom: 15px;
+	color: #FF6600;
+}
+
+#loginform p{
+	padding: 5px 0px;
+}
+#loginform input[type='text'],
+#loginform input[type='password'], 
+#loginform input[type='submit'],
+#loginform label
+{
+	display: block;
+	width: 100%;
+}
+
+#loginform input[type='text'], 
+#loginform input[type='password']
+{
+	
+	padding: 10px 8px;
+	border: 1px solid #ffefe5;
+	height: 40px;
+}
+
+#loginform input[type='text']:hover, 
+#loginform input[type='password']:hover
+{
+	border: 1px solid #FF6600;
+	background-color: #eee;
+}
+
+#loginform input[type='submit'], 
+#loginform input[type='text'], 
+#loginform input[type='password']
+{
+	transition: all 800ms linear;
+}
+
+#loginform input[type='submit']{
+	background-color: #fff; /*  #b34700; */
+	height: 40px;
+	border: 1px solid #b34700;;
+	border-radius: 10px;
+	padding: 5px 8px 10px;
+	text-align: center;
+	box-shadow: 0px 2px 2px #b34700;
+}
+
+#loginform input[type='submit']:hover{
+	background-color: #b34700;
+	box-shadow: none;
+	border: none;
+}
+#loginform, .login-submit{
+	margin: auto;
+	width: 80%;
+}
+
+
+.rtl #loginform input[type='text'], 
+.rtl #loginform input[type='password'], 
+.rtl #loginform input[type='checkbox'], 
+.rtl #loginform textarea{
+	direction: rtl !important;
+}
