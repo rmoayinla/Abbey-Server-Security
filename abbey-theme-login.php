@@ -1,11 +1,27 @@
 <?php
 
 class Abbey_Theme_Login{
+
 	private $login_form_css;
 	private $login_error;
 	private $login_details;
+
+	/**
+	 * Constructor function where all hooks are loaded 
+	 * @since: 
+	 */
 	function __construct(){
+
+		/**
+		 * Action hook where the wordpress logo is changed in login page
+		 * The uploaded logo of the current site is displayed instead 
+		 */
 		add_action( "login_head", array( $this, "show_site_logo" ) );
+
+		/**
+		 * Change the default url where the logo is linked to when clicked 
+		 * The url will now point to the current site homepage not wordpress
+		 */
 		add_filter( 'login_headerurl', array( $this, "site_url" ) );
 		add_filter( 'login_headertitle', array( $this, "site_description" ) );
 
@@ -24,14 +40,21 @@ class Abbey_Theme_Login{
 		
 	}
 
-	function show_site_logo(){	
-		if( !has_custom_logo() ){
-			return;
-		}
+	/**
+	 * Display the current site logo at the top of the login form 
+	 * this method is hooked to wp login_head 
+	 * The uploaded logo will be displayed through css 
+	 * @since: 
+	 */
+	function show_site_logo(){
+		// bail if there is no uploaded logo //	
+		if( !has_custom_logo() ) return;
+		
 			$logo = get_theme_mod("custom_logo");
 			$logo_attachment = wp_get_attachment_image_src( $logo, "full" );
 			$logo_url = $logo_attachment[0]; 
 		?>
+		<!-- start outputting the css to change the background logo -->
 		<style>
 			#login a{
 				background-image: url(<?php echo esc_url( $logo_url );?>)!important;
@@ -43,27 +66,70 @@ class Abbey_Theme_Login{
 		<?php
 	}
 
+	/** 
+	 * Return the current site homepage for the logo 
+	 * the default url is wordpress url but we will change it to the current site homepage 
+	 * @since: 
+	 */
 	function site_url( $url ){
 		$url = home_url( "/" );
 		return $url;
 	}
 
+	/**
+	 * Display the site description under the logo 
+	 * @uses: wp_trim_words 		to trim the default site description to 25 characters 
+	 * @since: 
+	 */
 	function site_description( $title ){
 		return wp_trim_words( get_bloginfo( "description" ), 25, "" );
 	}
 
+	/** 
+	 * A core method for this plugin where property values are assigned 
+	 * This method setup default values for our class  properties 
+	 * @since: 
+	 * @uses: get_transient 		this is use to check if there is a transient value of login error 
+	 */
 	function init(){
+
+		// a simple indicator for loading our css, this make sure we only load css when the shortcode is present //
 		$this->login_form_css = false;
+
+		// container for saving the user entered username and password //
 		$this->login_details = array();
+
+		// simple container for indicating the login error //
 		$this->login_error = "";
+
+		/** 
+		 * Check if there was an an error message set already
+		 * If set, the login error is copied  to our class property login_error 
+		 */
 		if( false !== ( $error = get_transient( "abbey_login_error" ) ) )
 			$this->login_error = get_transient( "abbey_login_error" );
+
+		/**
+		 * Check if there we have a login details stored 
+		 * This will be used to prefill the login form with the details of a user if present 
+		 */
 
 		if( false !== ( $details = get_transient( "abbey_login_details" ) ) )
 			$this->login_details = get_transient( "abbey_login_details" );
 	}
 
+	/**
+	 * Display the actual form from the details passed from the shortcode 
+	 * The form might be prefilled if there are some login details present 
+	 * The form will also display with an error message if there is any 
+	 * @since: 
+	 */
 	function show_login_form( $atts ){
+		
+		/**
+		 * Default shortcode attributes 
+		 * echo 		boolean			indicate if the form should be 
+		 */
 		$default =  array(
 			'echo'           => false,
 			'redirect'       => admin_url(),
