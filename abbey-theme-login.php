@@ -35,11 +35,30 @@ class Abbey_Theme_Login{
 		 * The url will now point to the current site homepage not wordpress
 		 */
 		add_filter( 'login_headerurl', array( $this, "site_url" ) );
+
+		/**
+		 * WP filter to change the title attribute for the login page logo
+		 * this attribute will now display the current site description albeit trimmed 
+		 * @see: __CLASS__::site_description 
+		 * @since: 1.0
+		 */
 		add_filter( 'login_headertitle', array( $this, "site_description" ) );
 
+		/**
+		 * WP action hook for a successful login 
+		 * Email the Site admin and logged in user when the user has logged in successfully 
+		 * @see: __CLASS__::email_user 
+		 * @since: 1.0
+		 */
 		add_action('wp_login', array( $this, "email_user" ), 10, 2);
 		
+		/**
+		 * Register the login css file to WP enqueue
+		 * the file wont be enqueued yet, it will be enqueued only when there is a login shortcode on the page
+		 * @since: 1.0
+		 */
 		add_action('init', array( $this, "register_login_css" ) );
+
 		add_action( 'wp_footer', array( $this, "print_login_css" ) );
 		add_action( "wp", array( $this, "logout_user" ) );
 		
@@ -56,7 +75,7 @@ class Abbey_Theme_Login{
 	 * Display the current site logo at the top of the login form 
 	 * this method is hooked to wp login_head 
 	 * The uploaded logo will be displayed through css 
-	 * @since: 
+	 * @since: 1.0
 	 */
 	function show_site_logo(){
 		// bail if there is no uploaded logo //	
@@ -81,7 +100,7 @@ class Abbey_Theme_Login{
 	/** 
 	 * Return the current site homepage for the logo 
 	 * the default url is wordpress url but we will change it to the current site homepage 
-	 * @since: 
+	 * @since: 1.0 
 	 */
 	function site_url( $url ){
 		$url = home_url( "/" );
@@ -91,7 +110,7 @@ class Abbey_Theme_Login{
 	/**
 	 * Display the site description under the logo 
 	 * @uses: wp_trim_words 		to trim the default site description to 25 characters 
-	 * @since: 
+	 * @since: 1.0
 	 */
 	function site_description( $title ){
 		return wp_trim_words( get_bloginfo( "description" ), 25, "" );
@@ -100,7 +119,7 @@ class Abbey_Theme_Login{
 	/** 
 	 * A core method for this plugin where property values are assigned 
 	 * This method setup default values for our class  properties 
-	 * @since: 
+	 * @since: 1.0
 	 * @uses: get_transient 		this is use to check if there is a transient value of login error 
 	 */
 	function init(){
@@ -133,14 +152,17 @@ class Abbey_Theme_Login{
 	/**
 	 * Display the actual form from the details passed from the shortcode 
 	 * The form might be prefilled if there are some login details present 
-	 * The form will also display with an error message if there is any 
+	 * The form will also display with an error message if there is any login error
 	 * @since: 
 	 */
 	function show_login_form( $atts ){
 		
 		/**
 		 * Default shortcode attributes 
-		 * echo 		boolean			indicate if the form should be 
+		 	* echo 				boolean			indicate if the form should be echoed or returned 
+		 	* redirect 			string 			the url to redirect to on successful login 
+		 	* value_username 	string 			a name that will be prefilled in the username field of the form 
+		 *
 		 */
 		$default =  array(
 			'echo'           => false,
@@ -153,11 +175,11 @@ class Abbey_Theme_Login{
 
 		ob_start();	?>
 			<?php if( !empty( $this->login_error ) ) : ?>
-				<div class="login-errors alert alert-warning">
-				 	<?php echo $this->login_error; ?> 
-				</div>
+				<div class="login-errors alert alert-warning"><?php echo $this->login_error; ?> </div>
 			<?php endif; ?>
+
 			<?php echo wp_login_form( $args ); ?>
+
 			<div style="direction: ltr;"><?php print_r( $this->login_details ); ?></div>
 		
 		<?php return ob_get_clean(); 
@@ -217,21 +239,55 @@ class Abbey_Theme_Login{
 		wp_register_style( 'abbey-login-form-css', plugin_dir_url( __FILE__ ) . '/css/login-form.css' );
 	}
 
+	/**
+	 * Print CSS for login form
+	 * the CSS is used to style the login form generated from shortcode
+	 * the CSS styles doesnt apply to wordpress login page i.e wp-login.php
+	 * @see: css/login-form.css to edit or tweak the styles  
+	 * @since: 1.0
+	 *
+	 */
 	function print_login_css(){
-		if( $this->login_form_css )
-			wp_print_styles( "abbey-login-form-css" );
+		/* 
+		 * bail if there is no shortcode
+		 * this var login_form_css is set to true only when there is shortcode in the page
+		 * this make sure that our styles are not being printed unnecessarily
+		 */
+		if( !$this->login_form_css ) return ;
+		
+		wp_print_styles( "abbey-login-form-css" );
 	}
 
+	/**
+	 * Send an email to the admin or logged in user at successful attempt 
+	 * this method is hooked to wp_login action hook which fires at successful login
+	 * @uses: wp_mail
+	 * @since: 1.0
+	 */
 	function email_user( $user_login, $user ){
-		if( empty( $user_login ) || is_wp_error( $user ) )
-			return;
+
+		// bail when there is an error with the current logged in user //
+		if( empty( $user_login ) || is_wp_error( $user ) ) return;
+
+		// set the global user information to the current active user //
 		wp_set_current_user( $user->ID );
+
+		//header options that will be passed to wp_mail eg CC, BCC, //
 		$headers = array();
+
+		// get the admin email address //
 		$admin_email = get_option( "admin_email" );
 
+		// set the reply to header //
 		$headers[] = "Reply-To:".get_bloginfo("name"). "'s Admin <".$admin_email.">";
+
+		// set content type of the mail //
 		$headers[] = "Content-Type: text/html";
+
+		// sent to admin email and the logged in user email //
 		$to = array ( $admin_email, $user->user_email );
+
+		/** Markup of the emal body that will be sent, the markup is in HTML with inline CSS */
 		$mail = sprintf( '<div style="font-size:13px;padding: 25px 30px;border-bottom: 2px solid #000;"> 
 								<p> On: %1$s, Time: %2$s </p>
 							</div>
@@ -249,6 +305,7 @@ class Abbey_Theme_Login{
 						home_url( "/" ),
 						date( "Y" )
 					);
+		//send the email //
 		$send = wp_mail ( $to, __( "Login Notice" ), $mail, $headers );
 	}
 
