@@ -1,6 +1,19 @@
 <?php
+/**
+ * 
+ * A simple class that handles Wordpress login page 
+ * Replace wordpress logo in login page with site uploaded logo 
+ * Provide a simple shortcode to display login form in posts and pages 
+ * Add additional verification and authentication to wordpress login process 
+ *
+ * version: 0.1 
+ * author: Rabiu Mustapha 
+ *
+ *
+ */
 
 class Abbey_Theme_Login{
+	
 	private $login_form_css;
 	private $login_error;
 	private $login_details;
@@ -33,9 +46,9 @@ class Abbey_Theme_Login{
 			$logo_url = $logo_attachment[0]; 
 		?>
 		<style>
-			#login a{
+			#login h1 a{
 				background-image: url(<?php echo esc_url( $logo_url );?>)!important;
-				background-size: 240px !important;
+				background-size: 68% !important;
 				width: 240px !important;
 				max-width: 80%;
 			}
